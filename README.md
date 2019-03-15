@@ -64,7 +64,7 @@ Pra entender o que está contecendo o melhor é ler o que está lá. Principalme
 
 ## Autenticação das mensagems (em construção)
 
-As mensgagens envidas por MQTT serão autenticadas para garantir sua oringem.
+As mensgagens envidas por MQTT serão autenticadas para garantir sua origem.
 
 ### Vai funcionar assim
 
@@ -72,11 +72,11 @@ Vamos enviar uma mensagem ``m``. A mensagem será enviada sem encriptação acom
 
     payload = m + '$' + s(m,k)
 
-Assim que recebemos o pacote testamos se ele está firmeza gerando a assinatura ``s(m,k)`` e comparando com o a que foi enviada.
+Assim que recebemos o pacote testamos se ele está firmeza gerando a assinatura ``s(m,k)`` e comparando com a que foi recebida.
 
 ### Gerando a assinatura ``s(m, k)``
 
-A assinatura será geranda usando BLAKE2s, com chave, de 16 bytes: [Python](https://docs.python.org/3.7/library/hashlib.html#blake2) [Arduino](http://rweather.github.io/arduinolibs/crypto.html)
+A assinatura será geranda usando BLAKE2s de 16 bytes com chave: [Python](https://docs.python.org/3.7/library/hashlib.html#blake2) [Arduino](http://rweather.github.io/arduinolibs/crypto.html)
 
 Decodificanda usando base64: [Python](https://docs.python.org/3.7/library/base64.html) [Arduino](https://github.com/Densaugeo/base64_arduino)
 

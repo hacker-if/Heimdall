@@ -1,0 +1,16 @@
+[Unit]
+Description=Site do HackerSpace
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/Heimdall
+ExecStart=/home/ubuntu/.local/bin/pipenv run gunicorn \
+          --bind localhost:8000 hackerspace:app
+RestartsSec=10
+Restart=always
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
