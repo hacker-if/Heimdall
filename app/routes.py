@@ -5,7 +5,7 @@ from app import app, db
 from app.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User, LogPorta
 from app.email import send_password_reset_email, send_activation_email
-from app.mqtt import open_door_request
+from app.mqtt import activate_door_request, add_token_request, open_door_request
 import os
 
 
@@ -110,7 +110,7 @@ def send_activation():
 # Realiza ativação
 @app.route('/activation/<token>')
 def activation(token):
-    if current_user.active:
+    if current_user.is_authenticated and current_user.active:
         return redirect(url_for('home'))
     user = User.verify_token('activation', token)
     if not user:
@@ -138,10 +138,19 @@ def dashboard():
 @app.route('/open_door')
 @login_required
 def open_door():
-    open_door_request()
+    activate_door_request()
     log = LogPorta(msg='Porta liberada', author=current_user)
     db.session.add(log)
     db.session.commit()
     flash('Porta liberada!', 'success')
     return redirect(url_for('dashboard'))
 
+
+# Adcionar novo token ao usuario
+@app.route('/add_token')
+@login_required
+def add_token():
+    id = User.query.filter_by(username=current_user).first().id
+    add_token_request(id)
+    flash('Passe seu cartão no leitor para cadastra-lo', 'success')
+    return redirect(url_for('dashboard'))

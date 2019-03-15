@@ -13,6 +13,9 @@ Pipfile.lock
 *.db
 migrations/
 
+# configuracoes locais
+.env
+
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb
@@ -20,3 +23,7 @@ migrations/
 # scripts de teste
 test*
 *.out
+
+# outros
+.directory
+.certs

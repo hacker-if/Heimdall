@@ -1,4 +1,5 @@
-from app import app, mqtt
+from app import app, mqtt, db
+from models import User, LogPorta
 from time import time
 
 # bibliotecas para altenticação das mensagem
@@ -14,18 +15,57 @@ def mqtt_connect(client, userdata, flags, rc):
 
 
 # Callback
+# aberto.31135435$...
+# id:1,token:Av3DF3d.313535$...
 @mqtt.on_message()
 def mqtt_message(client, userdata, message):
-    check = check_payload(message.payload.decode())
-    msg = 'MQTT CHECK' if check else 'MQTT FAILURE'
-    print(msg, message.topic, message.payload.decode())
+    if check_payload(message.payload.decode()):
+        status = 'MQTT CHECK'
+        msg, temp = message.payload.decode().split('.')
+        if abs(temp - time()) < 10:
+            data = {}
+            for x in msg.split(':'):
+                cmd = x.split(',')
+                if len(cmd) == 1:
+                    data[cmd[0]] = None
+                else:
+                    data[cmd[0]] = cmd[1]
 
+            if 'aberto' in data:
+                log = LogPorta(msg='Porta aberta')
+                db.session.add(log)
+                db.session.commit()
 
-def open_door_request():
-    msg = 'liberar:{}'.format(round(time()))
-    payload = form_payload(msg)
+            elif 'id' in data and data['id'] is not None\
+                 and 'uid' in data and data['uid'] is not None:
+                id = int(data['id'])
+                user = User.query.get(id)
+                user.token = data['uid']
+                db.session.commit()
+
+            elif 'uid' in data and data['uid'] is not None:
+                user = User.query.filter_by(token=data['uid']).first()
+                if user is not None:
+                    payload = form_payload('abrir')
+                    mqtt.publish(app.config['MQTT_OUT_TOPIC'], payload)
+
+    else:
+        status = 'MQTT FALURE'
+    print(status, message.topic, message.payload.decode())
+
+def send(msg):
+    payload = form_payload('liberar.{}'.format(round(time())))
     mqtt.publish(app.config['MQTT_OUT_TOPIC'], payload)
 
+def activate_door_request():
+    send('liberar')
+
+def add_token_request(id):
+    msg = 'id:{}'.format(id)
+    send(msg)
+
+def open_door_request():
+    send('abrir')
 
 # Gera assinatura
 def sign(msg, b64=False):
