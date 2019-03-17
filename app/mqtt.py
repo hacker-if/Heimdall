@@ -20,12 +20,13 @@ def mqtt_connect(client, userdata, flags, rc):
 @mqtt.on_message()
 def mqtt_message(client, userdata, message):
     if check_payload(message.payload.decode()):
-        status = 'MQTT CHECK'
+        status = True
         msg, temp = message.payload.decode().split('.')
+        temp = int(temp.split('$')[0])
         if abs(temp - time()) < 10:
             data = {}
-            for x in msg.split(':'):
-                cmd = x.split(',')
+            for x in msg.split(','):
+                cmd = x.split(':')
                 if len(cmd) == 1:
                     data[cmd[0]] = None
                 else:
@@ -39,22 +40,25 @@ def mqtt_message(client, userdata, message):
             elif 'id' in data and data['id'] is not None\
                  and 'uid' in data and data['uid'] is not None:
                 id = int(data['id'])
-                user = User.query.get(id)
-                user.token = data['uid']
-                db.session.commit()
+
+                try:
+                    user = User.query.get(id)
+                    user.token = data['uid']
+                    db.session.commit()
+                except Exception as e:
+                    print(e)
 
             elif 'uid' in data and data['uid'] is not None:
                 user = User.query.filter_by(token=data['uid']).first()
                 if user is not None:
-                    payload = form_payload('abrir')
-                    mqtt.publish(app.config['MQTT_OUT_TOPIC'], payload)
-
+                    send('abrir')
     else:
-        status = 'MQTT FALURE'
-    print(status, message.topic, message.payload.decode())
+        status = False
+    if not status:
+        print('MQTT FALHA', message.topic, message.payload.decode())
 
 def send(msg):
-    payload = form_payload('liberar.{}'.format(round(time())))
+    payload = form_payload('{}.{}'.format(msg, round(time())))
     mqtt.publish(app.config['MQTT_OUT_TOPIC'], payload)
 
 def activate_door_request():
@@ -86,3 +90,4 @@ def check_payload(payload):
     test = b64decode(test)
     valid = sign(app.config['MQTT_KEY'], msg)
     return compare_digest(test, valid)
+
